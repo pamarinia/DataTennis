@@ -17,11 +17,12 @@ class CourtReference:
         self.bottom_inner_line = ((423, 2386), (1242, 2386))
         self.top_extra_part = (832.5, 580)
         self.bottom_extra_part = (832.5, 2910)
+        self.center = (832, 1738)
 
         self.key_points = [*self.baseline_top, *self.baseline_bottom, 
                           *self.left_inner_line, *self.right_inner_line,
                           *self.top_inner_line, *self.bottom_inner_line,
-                          *self.middle_line]
+                          *self.middle_line, self.center]
         
         self.border_points = [*self.baseline_top, *self.baseline_bottom[::-1]]
 

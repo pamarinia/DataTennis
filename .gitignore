@@ -4,5 +4,6 @@ input
 models
 outputs
 tracker_stubs
+court_configurations
 
 yolov8x.pt

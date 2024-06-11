@@ -3,6 +3,7 @@ import cv2
 import pickle
 import sys
 sys.path.append('../')
+from tqdm import tqdm
 from bbox_utils import get_center_of_bbox, calculate_distance
 
 class PlayerTracker:
@@ -23,8 +24,8 @@ class PlayerTracker:
         for track_id, bbox in player_dict.items():
             player_center = get_center_of_bbox(bbox)
             min_distance = float('inf')
-            for i in range(0, len(court_keypoints), 2):
-                court_keypoint = (court_keypoints[i], court_keypoints[i+1])
+            for i in range(12,14):
+                court_keypoint = court_keypoints[i]
                 distance = calculate_distance(player_center, court_keypoint)
                 if distance < min_distance:
                     min_distance = distance
@@ -37,7 +38,7 @@ class PlayerTracker:
         return chosen_players
 
 
-    def detect_frames(self, frames, read_from_stub=False, stub_path=None):
+    def detect_frames(self, frames, court_keypoints, read_from_stub=False, stub_path=None):
         player_detections = []
 
         if read_from_stub and stub_path is not None:
@@ -46,7 +47,7 @@ class PlayerTracker:
             return player_detections
 
 
-        for frame in frames:
+        for frame in tqdm(frames):
             player_dict = self.detect_frame(frame)
             player_detections.append(player_dict)
 
@@ -54,10 +55,11 @@ class PlayerTracker:
             with open(stub_path, 'wb') as f:
                 pickle.dump(player_detections, f)
         
-        return player_detections
+        filtered_player_detections = self.choose_and_filter_player(court_keypoints, player_detections)
+        return filtered_player_detections
     
     def detect_frame(self, frame):
-        results = self.model.track(frame, persist=True)[0]
+        results = self.model.track(frame, persist=True, verbose=False)[0]
         id_name_dict = results.names
 
         player_dict = {}
