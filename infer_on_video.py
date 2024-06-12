@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from MoveNet import MoveNet
 from bounce_detection import BounceDetector
 from player_tracker import PlayerTracker
 from court_reference import CourtReference
@@ -174,6 +175,8 @@ if __name__ == '__main__':
     print('Player detection')
     player_tracker = PlayerTracker(model_path='yolov8x')
     player_detections = player_tracker.detect_frames(frames, keypoints_track[0], read_from_stub=False, stub_path='tracker_stubs/player_detection.pkl')
+    
+    skeleton_detection = MoveNet()
     
     print('Bounce detection')
     bounce_detector = BounceDetector(path_model='models\ctb_regr_bounce.cbm')
