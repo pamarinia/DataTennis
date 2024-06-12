@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import torch
+from tqdm import tqdm
 
 from bounce_detection import BounceDetector
 from player_tracker import PlayerTracker
@@ -101,10 +102,11 @@ def main(frames, bounces, ball_track, keypoints_track, matrix_track, player_dete
     height_minimap = 400
 
     court_img = get_court_img()
-    for i in range(len(frames)):
+    for i in tqdm(range(len(frames))):
         frame = frames[i]
         inv_matrix = matrix_track[i]
 
+        # draw ball track
         for j in range(trace):
             if (i-j >= 0):
                 if ball_track[i-j][0]:
@@ -114,33 +116,52 @@ def main(frames, bounces, ball_track, keypoints_track, matrix_track, player_dete
                 else:
                     break
         
+        # draw keypoints
         for kp in keypoints_track[i]:
             if kp[0] and kp[1]:
                 x = int(kp[0])
                 y = int(kp[1])
                 frame = cv2.circle(frame, (x, y), radius=5, color=(0, 0, 255), thickness=-1)
 
-
-            #frame = cv2.warpPerspective(frame, matrix, (court_img.shape[1], court_img.shape[0]))
-        final_images.append(frame)
-
-    final_images = player_tracker.draw_bboxes(final_images, player_detections)
-
-    
-
-    
-    minimap = cv2.resize(court_img, (width_minimap, height_minimap))
-
-    for frame in final_images:
         height, width, _ = frame.shape
+
+        # draw bounce on minimap
+        if i in bounces and inv_matrix is not None:
+            ball_point = ball_track[i]
+            ball_point = np.array(ball_point, dtype=np.float32).reshape(1, 1, 2)
+            ball_point = cv2.perspectiveTransform(ball_point, inv_matrix)
+            court_img = cv2.circle(court_img, (int(ball_point[0][0][0]), int(ball_point[0][0][1])), radius=0, color=(0, 255, 255), thickness=50)
+
+        minimap = court_img.copy()
+
+        # draw ball on minimap
+        ball_point = ball_track[i]
+        ball_point = np.array(ball_point, dtype=np.float32).reshape(1, 1, 2)
+        ball_point = cv2.perspectiveTransform(ball_point, inv_matrix)
+        minimap = cv2.circle(minimap, (int(ball_point[0][0][0]), int(ball_point[0][0][1])), radius=0, color=(0, 255, 255), thickness=30)
+
+        # draw players
+        for track_id, bbox in player_detections[i].items():
+            x1, y1, x2, y2 = bbox
+            frame = cv2.putText(frame, f"Player ID: {track_id}", (int(x1), int(y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+            frame = cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
+
+            # transmit player point to minicourt
+            x_foot, y_foot = (x1+x2)/2, y2
+            player_point = np.array([x_foot, y_foot], dtype=np.float32).reshape(1, 1, 2)
+            player_point = cv2.perspectiveTransform(player_point, inv_matrix)
+            minimap = cv2.circle(minimap, (int(player_point[0][0][0]), int(player_point[0][0][1])), radius=0, color=(255, 0, 0), thickness=100)
+
+        minimap = cv2.resize(minimap, (width_minimap, height_minimap))
         frame[10:10+height_minimap, width - 10 -width_minimap:width-10] = minimap
-    
+        final_images.append(frame)
+        
     return final_images
 
 if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    frames, fps = read_video('input/Med_Djo_cutcut.mp4')
+    frames, fps = read_video('input/Med_Djo_cut.mp4')
 
     print('Ball detection')
     ball_detector = BallDetector(model_path='models\BallTrackNet_model_best.pt', device=device)
@@ -160,6 +181,7 @@ if __name__ == '__main__':
     y_ball = [x[1] for x in ball_track]
     bounces = bounce_detector.predict(x_ball, y_ball)
 
+    print('Writing video')
     final_images = main(frames, bounces, ball_track, keypoints_track, matrix_track, player_detections)
     
     write_video(final_images, fps, 'outputs/Med_Djo_cut_tracked.avi')
