@@ -176,16 +176,20 @@ if __name__ == '__main__':
     player_tracker = PlayerTracker(model_path='yolov8x')
     player_detections = player_tracker.detect_frames(frames, keypoints_track[0], read_from_stub=False, stub_path='tracker_stubs/player_detection.pkl')
     
-    skeleton_detection = MoveNet()
-    
     print('Bounce detection')
     bounce_detector = BounceDetector(path_model='models\ctb_regr_bounce.cbm')
     x_ball = [x[0] for x in ball_track]
     y_ball = [x[1] for x in ball_track]
     bounces = bounce_detector.predict(x_ball, y_ball)
+    
+    print('Skeleton detection')
+    skeleton_detection = MoveNet()
+    final_images = skeleton_detection.infer_model(frames, player_detections)
 
     print('Writing video')
-    final_images = main(frames, bounces, ball_track, keypoints_track, matrix_track, player_detections)
+    final_images = main(final_images, bounces, ball_track, keypoints_track, matrix_track, player_detections)
+    
+    
     
     write_video(final_images, fps, 'outputs/Med_Djo_cut_tracked.avi')
 

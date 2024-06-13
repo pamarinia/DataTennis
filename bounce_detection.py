@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import CubicSpline
 from scipy.spatial import distance
+from tqdm import tqdm
 
 class BounceDetector:
     def __init__(self, path_model=None):
@@ -62,7 +63,7 @@ class BounceDetector:
         is_none = [int(x is None) for x in x_ball]
         interp = 5
         counter = 0
-        for num in range(interp, len(x_ball)-1):
+        for num in tqdm(range(interp, len(x_ball)-1)):
             if not x_ball[num] and sum(is_none[num-interp:num]) == 0 and counter < 3:
                 x_ext, y_ext = self.extrapolate(x_ball[num-interp:num], y_ball[num-interp:num])
                 x_ball[num] = x_ext
