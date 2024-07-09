@@ -189,10 +189,9 @@ if __name__ == '__main__':
     print('Writing video')
     final_images = main(final_images, bounces, ball_track, keypoints_track, matrix_track, player_detections)
     
-    
-    
     write_video(final_images, fps, 'outputs/Med_Djo_cut_tracked.avi')
 
+    
     
 
 

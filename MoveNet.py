@@ -73,7 +73,9 @@ class MoveNet:
         A [1, 1, 17, 3] float numpy array representing the predicted keypoint
         coordinates and scores.
         """
-        for i, frame in tqdm(enumerate(frames), total=len(frames)):
+        print(len(frames))
+        for i, frame in enumerate(frames):
+            print(i)
             input_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             for track_id, bbox in player_detections[i].items():
                 x1, y1, x2, y2 = bbox
@@ -94,6 +96,7 @@ class MoveNet:
                 input_image = tf.cast(input_image, dtype=tf.int32)
 
                 results = self.model(input_image)
+                print('OK')
                 keypoints_with_scores = results['output_0'].numpy()
 
                 output_image = np.squeeze(input_image, axis=0)
